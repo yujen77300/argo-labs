@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  labels:
+    app: vote
+    tier: front
+  name: vote
+spec:
+  replicas: 4
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: vote
+  strategy:
+    canary:
+      # 指定 stable 和 canary service
+      canaryService: vote-canary
+      stableService: vote-stable
+      # Istio 流量路由配置
+      trafficRouting:
+        istio:
+          virtualService:
+            name: vote-vsvc
+            routes:
+            - primary
+      # Canary 部署步驟
+      steps:
+      - setWeight: 20
+      - pause: {duration: 30s}
+      - setWeight: 40
+      - pause: {duration: 30s}
+      - setWeight: 60
+      - pause: {duration: 30s}
+      - setWeight: 80
+      - pause: {duration: 30s}
+  template:
+    metadata:
+      labels:
+        app: vote
+        tier: front
+    spec:
+      containers:
+      - image: schoolofdevops/vote:v1
+        name: vote
+        imagePullPolicy: Always
+        resources: 
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits: 
+            cpu: "250m"
+            memory: "128Mi"

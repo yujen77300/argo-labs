@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vote-vsvc
+  namespace: staging
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - vote-gateway
+  http:
+  - name: primary
+    match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: vote-stable
+        port:
+          number: 80
+      weight: 100
+    - destination:
+        host: vote-canary
+        port:
+          number: 80
+      weight: 0
